@@ -129,7 +129,7 @@ getbattery(char *base)
 	}
 	free(co);
 
-	co = readfile(base, "charge_full_design");
+	co = readfile(base, "charge_full");
 	if (co == NULL) {
 		co = readfile(base, "energy_full_design");
 		if (co == NULL)
