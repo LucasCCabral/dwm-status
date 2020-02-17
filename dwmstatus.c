@@ -176,10 +176,11 @@ gettemperature(char *base, char *sensor)
 int
 main(void)
 {
-        char *status;  
+	char *status;
 	char *bat;
 	char *tmutc;
 	char *tmbln;
+	char *temp;
 	
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
@@ -190,8 +191,9 @@ main(void)
 		bat = getbattery("/sys/class/power_supply/BAT0");
 		tmutc = mktimes("%H:%M", tzRecife);
 		tmbln = mktimes("%a %d %b %Y", tzRecife);
-		status = smprintf("Battery: %s | Time: %s | %s ",
-				  bat, tmutc, tmbln );
+		temp = gettemperature("/sys/class/hwmon/hwmon0/device/", "temp");
+		status = smprintf("Battery: %s | Temp: %s | Time: %s | %s ",
+				  bat, temp, tmutc, tmbln );
 		setstatus(status);
 
 		free(bat);
