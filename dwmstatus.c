@@ -3,6 +3,7 @@
  * by 20h
  */
 
+#define MAXSTR  1024
 #define _BSD_SOURCE
 #include <unistd.h>
 #include <stdio.h>
@@ -14,6 +15,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/sysinfo.h>
 
 #include <X11/Xlib.h>
 
@@ -173,27 +175,50 @@ gettemperature(char *base, char *sensor)
 	return smprintf("%02.0f°C", atof(co) / 1000);
 }
 
+static char *
+ram(void)
+{
+	static char ram[MAXSTR];
+	struct sysinfo s;
+
+	sysinfo(&s);
+	snprintf(ram, sizeof(ram), "%.0lf",
+			 ((double) (s.totalram - s.freeram))/((double) s.totalram)*100);
+
+	return ram;
+}
+
 int
 main(void)
 {
-        char *status;  
+	char *status;
 	char *tmutc;
 	char *tmbln;
-	
+	char *cputemp;
+	char *gputemp;
+	char *avram;
+
 	if (!(dpy = XOpenDisplay(NULL))) {
 		fprintf(stderr, "dwmstatus: cannot open display.\n");
 		return 1;
 	}
 
-	for (;;sleep(60)) {
-		tmutc = mktimes("%H:%M", tzRecife);
+	for (;;sleep(5)) {
+		tmutc = mktimes("%H:%M:%S", tzRecife);
 		tmbln = mktimes("%a %d %b %Y", tzRecife);
-		status = smprintf("Time: %s | %s ",
-				  tmutc, tmbln );
-		setstatus(status);
+		cputemp = gettemperature("/sys/class/hwmon/hwmon3/", "temp1_input");
+		gputemp = gettemperature("/sys/class/hwmon/hwmon4/", "temp1_input");
+		avram = ram();
+		status = smprintf("T: cpu %s gpu %s | mem: %s% | Time: %s | %s ",
+				  cputemp, gputemp, avram, tmutc, tmbln );
 
+		setstatus(status);
 		free(tmutc);
 		free(status);
+		free(cputemp);
+		free(gputemp);
+		free(avram);
+		free(tmbln);
 	}
 
 	XCloseDisplay(dpy);
